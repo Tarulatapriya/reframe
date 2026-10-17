@@ -458,6 +458,10 @@ We welcome contributions of all kinds — code, documentation, design, and feedb
 
 Thanks to [Chromatic](https://www.chromatic.com/) for providing the visual testing platform that helps us review UI changes and catch visual regressions.
 
+<a href="https://www.datadoghq.com/"><img src="public/badges/datadog-logo.png" width="153" alt="Datadog" /></a>
+
+Reframe is part of the [Datadog Open Source Program](https://www.datadoghq.com/partners/open-source/). Thank you to [Datadog](https://www.datadoghq.com/) for supporting the project and for the Real User Monitoring that helps us understand FFmpeg.wasm load performance and export reliability.
+
 ---
 
 ## License
@@ -475,3 +479,28 @@ Made with ❤️ for everyone who just wants to edit a video without the hassle.
 </div>
 
 ---
+
+## Troubleshooting
+
+### Installation fails
+- Ensure you're on [Bun](https://bun.sh) (this project uses `bun.lock`, not npm/yarn) with Node.js 20.9+.
+- Run `bun install`.
+- Delete `node_modules` and `bun.lock`, then reinstall if issues persist.
+
+### Environment variables not loading
+- Verify that a `.env.local` file exists (see `.env.example` for the required keys).
+- Restart the development server after making changes — env vars are only read at startup.
+
+## FAQ
+
+### How do I start the project?
+Run:
+
+```bash
+bun install
+bun run dev
+```
+
+### How do I report a bug?
+Please open a GitHub issue with reproduction steps and relevant logs.
+

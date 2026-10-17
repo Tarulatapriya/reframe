@@ -1,6 +1,7 @@
 import { EditRecipe, ExportResult, BackgroundMusicOptions, ImageOverlayOptions, MAX_FILE_SIZE } from "./types";
 import { getPresetById } from "./presets";
 import { buildTextFilter } from "./text-overlay";
+import { trackAction, trackTiming } from "./telemetry";
 
 export class FFmpegLoadError extends Error {}
 
@@ -198,8 +199,20 @@ export async function loadFFmpeg(
 
   signal?.addEventListener("abort", onAbort, { once: true });
 
+  const loadStart = performance.now();
   try {
     await workerReady;
+    const durationMs = Math.round(performance.now() - loadStart);
+    trackAction("ffmpeg_load_success", { durationMs });
+    trackTiming("ffmpeg_ready");
+  } catch (err) {
+    if (!(err instanceof DOMException && err.name === "AbortError")) {
+      trackAction("ffmpeg_load_failure", {
+        durationMs: Math.round(performance.now() - loadStart),
+        reason: err instanceof Error ? err.name : "unknown",
+      });
+    }
+    throw err;
   } finally {
     cleanup();
   }
@@ -614,13 +627,12 @@ interface PositionCoords {
     if (shouldKeepAudio) args.push("-c:a", "aac", "-b:a", "128k");
   }
 
-  // Add explicit output duration when speed != 1 to prevent slight duration
-  // overshoot caused by encoder/filter pipeline frame flush at stream end.
-  if (recipe.speed !== 1) {
-    const sourceDuration = (recipe.trimEnd ?? videoDuration) - recipe.trimStart;
-    const outputDuration = sourceDuration / recipe.speed;
-    args.push("-t", outputDuration.toFixed(6));
-  }
+  // Add explicit output duration to prevent slight duration overshoot
+  // caused by encoder/filter pipeline frame flush at stream end,
+  // and to prevent infinite loops when adding looped audio to silent videos.
+  const sourceDuration = (recipe.trimEnd ?? videoDuration) - recipe.trimStart;
+  const outputDuration = sourceDuration / recipe.speed;
+  args.push("-t", outputDuration.toFixed(6));
 
   args.push(outputName);
   return args;
